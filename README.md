@@ -3,7 +3,7 @@
 ### ⚡ Agentic AI Ledger for Real-World Finance
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Mumbai%20Hack-2026-black?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Mumbai%20Hack-2025-black?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Track-Agentic%20AI-purple?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Stage-Working%20Product-success?style=for-the-badge"/>
 </p>
