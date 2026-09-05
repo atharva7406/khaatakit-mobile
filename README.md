@@ -17,7 +17,9 @@
 
 ## 🚀 Live App
 
-🔗 https://khaata-kitab.lovable.app
+[Live App](https://khaata-kitab.lovable.app)
+
+> The live deployment is primarily intended for demonstration. Some capabilities — particularly native Android SMS ingestion and cloud synchronization — remain under active development.
 
 ---
 
@@ -25,191 +27,189 @@
 
 Most finance apps expect users to **input everything manually**.
 
-KhaataKitab flips that:
-
-> It behaves like an **agent** that watches, processes, and assists —
-> instead of waiting for user input.
+KhaataKitab behaves more like an assistant that watches, processes, and verifies — reading signals that already exist (bank SMS, receipts) and turning them into structured, categorized ledger entries, with a human in the loop to confirm or correct.
 
 ---
 
 ## 🎯 Problem → Insight → Solution
 
-| 🚨 Problem         | 💡 Insight            | ⚡ Solution           |
-| ------------------ | --------------------- | -------------------- |
-| Scattered payments | SMS already has truth | Read & structure SMS |
-| Manual errors      | Users forget entries  | Auto + verify system |
-| No trust in data   | Raw logs ≠ reliable   | Verification engine  |
-| No clarity         | Data ≠ insight        | Smart analytics      |
+| 🚨 Problem | 💡 Insight | ⚡ Solution |
+|---|---|---|
+| Scattered payments across apps/cash | Bank SMS already contains the truth | Parse SMS into structured transactions |
+| Manual entry is tedious and error-prone | Users forget to log transactions | Auto-capture + review queue |
+| Miscategorized spending | Keyword rules alone don't generalize | Multi-tier ML categorization with online learning |
+| Numbers without context | Data ≠ insight | Dashboards, cashflow trends, financial health score |
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TB
+    U[User]
+
+    U --> WEB[React Web App]
+    U --> AND[Capacitor Android App]
+
+    WEB --> AUTH[Supabase Auth]
+    AND --> AUTH
+
+    WEB --> DB[Dexie / IndexedDB]
+    AND --> DB
+
+    AND --> SMS[SMS Ingestion]
+    SMS --> PARSER[Transaction Parser]
+
+    PARSER --> CLASSIFIER[Local Categorization Engine]
+    DB --> CLASSIFIER
+
+    CLASSIFIER --> REVIEW[Human Verification]
+    REVIEW --> DB
+
+    CLASSIFIER --> AI[Supabase Edge Functions]
+    AI --> LLM[AI Provider]
+
+    DB --> INSIGHTS[Insights Engine]
+    AI --> INSIGHTS
+```
+
+---
+
+## 🤖 Agentic Workflow
+
+```mermaid
+flowchart LR
+    A[Transaction Signals] --> B[Parse]
+    B --> C[Categorize]
+    C --> D{Confidence}
+    D -->|High| E[Ledger]
+    D -->|Low| F[AI Assistance]
+    F --> G[User Verification]
+    G --> H[Learn From Correction]
+    H --> C
+    E --> I[Insights]
+```
+
+- **Observe** — capture transaction signals from SMS and receipts
+- **Understand** — extract and categorize transaction data
+- **Verify** — confidence-based review and human confirmation
+- **Assist** — generate summaries and financial insights
+- **Learn** — incorporate user corrections into local categorization
 
 ---
 
 ## ⚙️ Core System Capabilities
 
-### 📲 Passive Transaction Capture
+### 📲 SMS-Based Transaction Capture
+- Regex-based parser extracts amount, direction (credit/debit), payment method, last 4 digits, and reference ID from raw bank SMS text
+- Runs entirely client-side — no data leaves the device for parsing
+- Native Android auto-read (real-time SMS listener) is in progress; current build supports import of sample SMS for testing the parsing pipeline
 
-* Reads financial SMS (Android)
-* Converts unstructured text → structured data
+### 🧠 Multi-Tier Intelligent Categorization
+A cascading pipeline that only escalates cost when it needs to:
+1. **User-learned mappings** (IndexedDB) — instant, from your own corrections
+2. **Merchant dictionary match** — e.g. "Swiggy" → Food & Dining
+3. **On-device Naive Bayes classifier** — probabilistic categorization with confidence scoring, Laplace smoothing, online learning from corrections
+4. **AI fallback** (Supabase Edge Function → AI provider) — triggered only when local confidence is low
 
----
-
-### 🧠 Intelligent Categorization
-
-* Semantic + keyword-based mapping
-* Learns from corrections (feedback loop)
-
----
-
-### ✅ Verification Engine *(Trust Layer)*
-
-* Matches manual entries with SMS data
-* Compares:
-
-  * amount
-  * time
-  * merchant
-  * payment method
-
-✔ Outputs:
-
-* **Verified**
-* **Needs Review**
-
----
+### ✅ Review & Correction Loop
+- Transactions below a confidence threshold are flagged **Needs Review**
+- Correcting a category updates the on-device classifier's word-frequency table, improving it over time
+- Manual entries are cross-checked against parsed SMS (amount/time/merchant/method) to support verified vs. needs-review status
 
 ### 📊 Insight Layer
+- Monthly income/expense summaries, category breakdown, cashflow trend charts
+- Financial Health Score (0–100) from three weighted factors: income regularity, expense control, consistency
+- Cashflow "prediction" is currently a deterministic heuristic (rolling average), not a trained forecasting model — labeled accordingly in-app, because the distinction between a heuristic and a model matters
 
-* Monthly summaries
-* Category distribution
-* Financial awareness at a glance
-
----
-
-## ✨ UI/UX Intelligence (Latest Enhancements)
-
-> Not just functional — **responsive, adaptive, and intuitive**
-
-### 🔐 Authentication Flow
-
-* Lightweight login system (local storage-based)
-* Protected routes + session persistence
-* Logout integrated into profile settings
+### 📦 Inventory Tracking
+- CRUD for stock items with quantity and computed value
+- **Ledger ↔ Inventory integration (in progress):** sales transactions will automatically decrement stock
 
 ---
 
-### 🏷️ Smart Transaction Feedback
+## 📱 UI/UX
 
-* “Needs Review” badge:
-
-  * No overlap issues
-  * Smooth fade-out on verification
-* Real-time UI state updates
+- Fully responsive: 1 column (mobile) → 2 (tablet) → 3 (desktop)
+- Offline-first: reads and writes continue uninterrupted with no network connection, backed by IndexedDB (Dexie)
+- Dark mode, smooth transitions, real-time reactive updates on data change
 
 ---
 
-### 🎯 Editable Financial Goals
+## 🔍 Current Implementation Status
 
-* Monthly income goal with modal editing
-* Immediate visual feedback
-
----
-
-### 📱 Fully Responsive Experience
-
-* Adaptive grid:
-
-  * 1 column → mobile
-  * 2 → tablet
-  * 3 → desktop
-* Smooth animations:
-
-  * Fade-in
-  * Slide-up
-  * Scale transitions
-
----
-
-### 🎨 Micro-Interactions & Polish
-
-* Hover elevation effects
-* Consistent spacing & alignment
-* 200–300ms smooth transitions
-* Dark mode optimized
-
----
-
-## 🎬 System Flow
-
-```mermaid id="flow-smart"
-flowchart TD
-A[📩 SMS / Input] --> B[🔍 Parsing Engine]
-B --> C[🧠 Categorization]
-C --> D[✅ Verification Engine]
-D --> E[📒 Ledger]
-E --> F[📊 Insights]
-F --> C
-```
-
----
-
-## 🤖 Why This is Agentic AI
-
-<details>
-<summary>Click to explore</summary>
-
-* 🔍 **Perception** → Reads SMS data
-* 🧠 **Reasoning** → Categorizes transactions
-* ⚖️ **Decision-making** → Verifies vs flags
-* 🔁 **Learning loop** → Improves via user feedback
-
-👉 This is a **behavior-driven system**, not static CRUD
-
-</details>
+| Capability | Status |
+|---|---|
+| Local ledger (add/edit/delete, filtering, search) | ✅ |
+| Offline persistence | ✅ |
+| AI categorization (Naive Bayes + fallback) | ✅ |
+| SMS parsing | ✅ |
+| AI chat copilot | ✅ |
+| Receipt processing (cloud vision) | ✅ |
+| Supabase authentication | ✅ |
+| Cloud synchronization | 🚧 |
+| Native Android SMS auto-capture | 🚧 |
+| Inventory ↔ ledger integration | 🚧 |
 
 ---
 
 ## 🛠️ Tech Stack
 
 <p align="center">
-  <img src="https://skillicons.dev/icons?i=react,ts,nodejs,postgres,tailwind"/>
+  <img src="https://skillicons.dev/icons?i=react,ts,vite,tailwind,supabase,postgres"/>
 </p>
+
+**Frontend:** React · TypeScript · Vite · Tailwind CSS · shadcn/ui
+**Data & Persistence:** Dexie · IndexedDB
+**Backend:** Supabase · PostgreSQL · Edge Functions
+**AI:** AI Edge Functions · local Naive Bayes classifier
+**Mobile:** Capacitor · Android
+**Visualization:** Recharts
 
 ---
 
 ## ⚡ Engineering Highlights
 
-* Designed **verification logic pipeline**
-* Built **semantic categorization engine**
-* Implemented **real-time UI sync**
-* Integrated **mobile SMS-based data ingestion**
-* Structured system for **future ML scaling**
+- Multi-tier categorization pipeline balancing cost, latency, and accuracy (local-first, cloud fallback only when needed)
+- Online-learning classifier that improves from user corrections without a server round-trip
+- Offline-first architecture with reactive local persistence
+- Structured extraction from unstructured bank SMS text via regex parsing
+- Real authentication via Supabase Auth, replacing the earlier local-session prototype
 
 ---
 
 ## 🚀 Run Locally
 
-```bash id="run123"
+```bash
 git clone <YOUR_GIT_URL>
 cd <PROJECT_NAME>
 npm install
 npm run dev
 ```
 
+Environment variables required (see `.env.example`):
+```
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+```
+
 ---
 
-## 🔮 Future Roadmap
+## 🔮 Roadmap
 
-* 📈 ML-powered categorization
-* 🔐 Secure authentication (JWT / biometrics)
-* 💳 Credit scoring indicators
-* 🌍 Multi-language support
-* ☁️ Cloud sync + backups
+- 👥 **Contacts / party ledger** ("who owes me, whom do I owe") — the core khata use case, in progress
+- ☁️ Genuine cloud sync with conflict resolution
+- 📦 Ledger ↔ inventory integration (sales auto-adjust stock)
+- 📱 Native Android SMS auto-capture
+- 🧪 Automated test coverage (parser, classifier)
+- 💳 Credit/trust scoring for repeat customers
+- 🌍 Multi-language input (Hindi/Marathi voice and text)
 
 ---
 
 ## 💬 Philosophy
 
-> The future of apps is not interaction.
-> It’s **automation with intelligence**.
+> The future of apps is not interaction. It's automation with intelligence — and a human who can still check its work.
 
 ---
 
